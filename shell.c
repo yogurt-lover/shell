@@ -12,30 +12,47 @@ void process() {
   char raw_input[100];
   printf(PROMPT);
   fgets(raw_input, sizeof(raw_input), stdin);
-  raw_input[strlen(raw_input)-1] = 0; //remove newline
 
   char *s1 = raw_input;
   while (s1) {
     char *single_input = strsep(&s1, ";");
+    
+    char *args[100];
+    char *pch = strtok(single_input, " \n\r\t");
 
-    char *command_args[100];
-    char *s2 = single_input;
-
+    /* Old version
     int i = 0;
     while (s2) {
-      command_args[i] = strsep(&s2, " ");
-      i++;
+      char *arg = strsep(&s2, " ");
+      if (strlen(arg)) {
+	args[i] = arg;
+	i++;
+      }
     }
-    command_args[i] = 0;
+    args[i] = 0;
+    */
 
-    //remove command_args elements with "\0" 
-    
-    //
-    
+    // New version separates on any whitespace
+    // Fills args[] with the arguments from single_input
+    int i;
+    for (i = 0; pch; i++) {
+      args[i] = pch;
+      pch = strtok(NULL, " \n\r\t");
+    }
+    args[i] = pch;
+
+    /* Print first 5 args
+    int k = 0;
+    for (; k< 5; k++) {
+      printf("arg: \"%s\"\n", args[i]);
+    }
+    */
+
+    // Execute the command
     int f = fork();
     if (f == 0) {
-      if (execvp(command_args[0], command_args) == -1) {
-	printf("%s: command not found\n", single_input);
+      if (execvp(args[0], args) == -1) {
+	printf("%s: command not found\n", args[0]);
       }
     }
     else {
