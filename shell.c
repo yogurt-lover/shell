@@ -3,14 +3,16 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
-#define PROMPT "$ "
-
+#include <errno.h>
 
 void process() {
 
+  //prompt
+  char prompt[500];
+  getcwd(prompt, sizeof(prompt));
+  printf("%s$ ", prompt);
+  
   char raw_input[100];
-  printf(PROMPT);
   fgets(raw_input, sizeof(raw_input), stdin);
 
   char *s1 = raw_input;
@@ -51,7 +53,12 @@ void process() {
     // Execute the command
     int f = fork();
     if (f == 0) {
-      if (execvp(args[0], args) == -1) {
+      if (!strcmp(args[0], "cd")) {
+	if (chdir(args[1])) {
+	  printf("%s: %s\n", args[1], strerror(errno));
+	}
+      }
+      else if (execvp(args[0], args) == -1) {
 	printf("%s: command not found\n", args[0]);
       }
     }

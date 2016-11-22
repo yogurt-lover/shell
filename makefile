@@ -1,7 +1,7 @@
 default: shell
 
-executor: shell.c
-	gcc -o shell shell.c
+shell: shell.c
+	gcc -o shell shell.c -Wall
 
 run: shell
 	./shell
@@ -9,4 +9,4 @@ run: shell
 clean:
 	-rm *~
 	-rm shell
-
+	-rm a.out
