@@ -5,12 +5,16 @@
 #include <sys/wait.h>
 #include <errno.h>
 
+#define NRML  "\x1B[0m"
+#define CYAN  "\x1B[36m"
+
+
 void process() {
 
   //prompt
   char prompt[500];
   getcwd(prompt, sizeof(prompt));
-  printf("%s$ ", prompt);
+  printf("%s%s%s$ ", CYAN, prompt, NRML);
   
   char raw_input[100];
   fgets(raw_input, sizeof(raw_input), stdin);
