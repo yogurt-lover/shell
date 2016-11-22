@@ -1,11 +1,12 @@
-default: executor
+default: shell
 
-executor: executor.c
-	gcc -o executor executor.c
+executor: shell.c
+	gcc -o shell shell.c
 
-run: executor
-	./executor
+run: shell
+	./shell
 
 clean:
 	-rm *~
-	-rm executor
+	-rm shell
+	-rm 
