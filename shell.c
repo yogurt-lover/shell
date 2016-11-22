@@ -47,21 +47,33 @@ void process() {
     }
     args[i] = pch;
 
-    /* Print first 5 args
+    // Print  args
+    printf("----------------------------\n");
+    printf("ARGUMENTS\n");
     int k = 0;
-    for (; k< 5; k++) {
-      printf("arg: \"%s\"\n", args[i]);
+    for (; k < i; k++) {
+      printf("arg: @%s@\n", args[k]);
     }
-    */
+    printf("----------------------------\n");
+
 
     // Execute the command
     int f = fork();
     if (f == 0) {
+
+      // cd
       if (!strcmp(args[0], "cd")) {
-	if (chdir(args[1])) {
-	  printf("%s: %s\n", args[1], strerror(errno));
+	if (args[1]) {
+	  if (chdir(args[1])) {
+	    printf("%s\n", strerror(errno));
+	  }
+	}
+	else {
+	  printf("This should go to the HOME path, but it hasn't been implemented yet :(\n");
 	}
       }
+
+      // system binaries
       else if (execvp(args[0], args) == -1) {
 	printf("%s: command not found\n", args[0]);
       }
