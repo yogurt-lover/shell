@@ -9,68 +9,98 @@
 #define CYAN "\x1B[36m"
 #define BOLD "\x1B[1m"
 
+// signals
+// tab bug (i think due to fscan)
+// resizing buffers
+// redirection < | >
+
+void print_prompt() {
+  char prompt[256];
+  getcwd(prompt, 256);
+  printf("%s%s%s%s$ ", CYAN, BOLD, prompt, NRML);
+}
+
+char *read_raw() {
+  char *buff = (char *)malloc(256*sizeof(char));
+  fgets(buff, 256, stdin);
+  return buff;
+}
+
+char **get_args(char *input, int *num_inputs) {
+  char **args = (char **)malloc(256*sizeof(char*));
+  char *arg = strtok(input, " \n\r\t");
+
+  int counter;
+  for (counter = 0; arg; counter++) {
+    args[counter] = arg;
+    //printf("~~~%s~~~\n", args[counter]);
+    arg = strtok(NULL, " \n\r\t");
+  }
+  args[counter] = arg;
+  *num_inputs = counter;
+
+  return args;
+}
+
+void execute(char **args) {
+  int f = fork();
+  if (f == 0) {
+
+    // cd (might put this someplace else)
+    if (!strcmp(args[0], "cd")) {
+      if (args[1]) {
+	if (chdir(args[1])) {
+	  printf("%s\n", strerror(errno));
+	}
+      }
+      else {
+	chdir("/\n");
+      }
+      
+    }
+
+    // system binaries
+    else if (execvp(args[0], args) == -1) {
+      printf("%s: command not found\n", args[0]);
+    }
+  }
+  else {
+    wait(NULL);
+  }
+}
+
 void process() {
 
-  //prompt
-  char prompt[500];
-  getcwd(prompt, sizeof(prompt));
-  printf("%s%s%s%s$ ", CYAN, BOLD, prompt, NRML);
+  char *raw_input;
   
-  char raw_input[100];
-  fgets(raw_input, sizeof(raw_input), stdin);
+  print_prompt(); 
+  raw_input = read_raw();
+  //printf("raw: ~~~%s~~~\n", raw_input);
+  
+  char *s = raw_input;
+  while (s) {
+    int num_inputs;
+    char *single_input;
+    char **args;
 
-  char *s1 = raw_input;
-  while (s1) {
-    char *single_input = strsep(&s1, ";");
+    single_input = strsep(&s, ";");
+    args = get_args(single_input, &num_inputs);
+    execute(args);
+
+    free(args);
     
-    char *args[100];
-    char *pch = strtok(single_input, " \n\r\t");
-
-    // New version separates on any whitespace
-    // Fills args[] with the arguments from single_input
-    int i;
-    for (i = 0; pch; i++) {
-      args[i] = pch;
-      pch = strtok(NULL, " \n\r\t");
-    }
-    args[i] = pch;
-
-    // Print args for debugging
+    /* Print arguments
     printf("----------------------------\n");
     printf("ARGUMENTS\n");
     int k = 0;
-    for (; k < i; k++) {
-      printf("arg: @%s@\n", args[k]);
+    for (; k < num_inputs; k++) {
+      printf("arg: ~~~%s~~~\n", args[k]);
     }
     printf("----------------------------\n");
-
-
-    // Execute the command
-    int f = fork();
-    if (f == 0) {
-
-      // cd
-      if (!strcmp(args[0], "cd")) {
-	if (args[1]) {
-	  if (chdir(args[1])) {
-	    printf("%s\n", strerror(errno));
-	  }
-	}
-	else {
-	  printf("This should go to the HOME path, but it hasn't been implemented yet :(\n");
-	}
-      }
-
-      // system binaries
-      else if (execvp(args[0], args) == -1) {
-	printf("%s: command not found\n", args[0]);
-      }
-    }
-    else {
-      wait(NULL);
-    }
+    */
     
   }
+  free(raw_input);
 }
 
 int main() {
