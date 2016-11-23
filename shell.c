@@ -10,7 +10,7 @@
 #define BOLD "\x1B[1m"
 
 // signals
-// tab bug (i think due to fscan)
+// tab bug (due to prompt)
 // resizing buffers
 // redirection < | >
 
@@ -22,6 +22,20 @@ void print_prompt() {
 
 char *read_raw() {
   char *buff = (char *)malloc(256*sizeof(char));
+
+  /*
+  char c;
+  int counter = 0;
+
+  c = getchar();
+  for (; c != '\n' && c != EOF; counter++) {
+    buff[counter] = c;
+    c = getchar();
+  }
+  buff[counter] = '\0';
+  return buff;
+  */
+  
   fgets(buff, 256, stdin);
   return buff;
 }
@@ -42,35 +56,40 @@ char **get_args(char *input, int *num_inputs) {
   return args;
 }
 
-void execute(char **args) {
+int execute(char **args) {
+  // cd (might put this someplace else)
+  if (!strcmp(args[0], "cd")) {
+    if (args[1]) {
+      if (chdir(args[1])) {
+	printf("%s\n", strerror(errno));
+      }
+    }
+    else {
+      chdir("/\n"); //change this to home directory 
+    }
+    return 1;
+  }
+  
+  // exit (this too)
+  if (!strcmp(args[0], "exit")) {
+    return 0;
+  }
+  
+  // system binaries
   int f = fork();
   if (f == 0) {
-
-    // cd (might put this someplace else)
-    if (!strcmp(args[0], "cd")) {
-      if (args[1]) {
-	if (chdir(args[1])) {
-	  printf("%s\n", strerror(errno));
-	}
-      }
-      else {
-	chdir("/\n");
-      }
-      
-    }
-
-    // system binaries
-    else if (execvp(args[0], args) == -1) {
+    if (execvp(args[0], args) == -1) {
       printf("%s: command not found\n", args[0]);
     }
   }
   else {
     wait(NULL);
   }
+  return 1;
 }
 
-void process() {
-
+int process() {
+  int status;
   char *raw_input;
   
   print_prompt(); 
@@ -85,11 +104,8 @@ void process() {
 
     single_input = strsep(&s, ";");
     args = get_args(single_input, &num_inputs);
-    execute(args);
 
-    free(args);
-    
-    /* Print arguments
+    /*
     printf("----------------------------\n");
     printf("ARGUMENTS\n");
     int k = 0;
@@ -99,13 +115,18 @@ void process() {
     printf("----------------------------\n");
     */
     
+    status = execute(args);
+    free(args);
   }
   free(raw_input);
+  return status;
 }
 
 int main() {
-  while (1) {
-    process();
+  int status = 1;
+  while (status) {
+    status = process();
+    //printf("status: %d\n", status);
   }
   return 0;
 }
