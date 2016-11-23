@@ -40,7 +40,7 @@ char *read_raw() {
   return buff;
 }
 
-char **get_args(char *input, int *num_inputs) {
+char **get_args(char *input, int *num_args) {
   char **args = (char **)malloc(256*sizeof(char*));
   char *arg = strtok(input, " \n\r\t");
 
@@ -51,12 +51,15 @@ char **get_args(char *input, int *num_inputs) {
     arg = strtok(NULL, " \n\r\t");
   }
   args[counter] = arg;
-  *num_inputs = counter;
+  *num_args = counter;
 
   return args;
 }
 
-int execute(char **args) {
+int execute(char **args, int *num_args) {
+  // whitespace or no characters at all
+  if (!args[0]) return 1;
+  
   // cd (might put this someplace else)
   if (!strcmp(args[0], "cd")) {
     if (args[1]) {
@@ -78,6 +81,14 @@ int execute(char **args) {
   // system binaries
   int f = fork();
   if (f == 0) {
+
+    // colorized ls
+    if (!strcmp(args[0], "ls")) {
+      args[*num_args] = "--color=auto";
+      *num_args += 1;
+      args[*num_args] = NULL;
+    }
+    
     if (execvp(args[0], args) == -1) {
       printf("%s: command not found\n", args[0]);
     }
@@ -98,13 +109,15 @@ int process() {
   
   char *s = raw_input;
   while (s) {
-    int num_inputs;
+    int num_args;
     char *single_input;
     char **args;
 
     single_input = strsep(&s, ";");
-    args = get_args(single_input, &num_inputs);
-
+    //printf("single:~~~%s~~~\n", single_input);
+    args = get_args(single_input, &num_args);
+    //printf("args[0]: ~~~%s~~~\n", args[0]);
+    
     /*
     printf("----------------------------\n");
     printf("ARGUMENTS\n");
@@ -115,7 +128,7 @@ int process() {
     printf("----------------------------\n");
     */
     
-    status = execute(args);
+    status = execute(args, &num_args);
     free(args);
   }
   free(raw_input);
