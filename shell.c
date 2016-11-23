@@ -17,7 +17,7 @@
 void print_prompt() {
   char prompt[256];
   getcwd(prompt, 256);
-  printf("%s%s%s%s$ ", CYAN, BOLD, prompt, NRML);
+  printf("%s%s%s%s $ ", CYAN, BOLD, prompt, NRML);
 }
 
 char *read_raw() {
@@ -43,7 +43,6 @@ char *read_raw() {
 char **get_args(char *input, int *num_args) {
   char **args = (char **)malloc(256*sizeof(char*));
   char *arg = strtok(input, " \n\r\t");
-
   int counter;
   for (counter = 0; arg; counter++) {
     args[counter] = arg;
@@ -122,12 +121,12 @@ int process() {
     printf("----------------------------\n");
     printf("ARGUMENTS\n");
     int k = 0;
-    for (; k < num_inputs; k++) {
+    for (; k < num_args; k++) {
       printf("arg: ~~~%s~~~\n", args[k]);
     }
     printf("----------------------------\n");
     */
-    
+
     status = execute(args, &num_args);
     free(args);
   }
