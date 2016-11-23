@@ -26,18 +26,6 @@ void process() {
     char *args[100];
     char *pch = strtok(single_input, " \n\r\t");
 
-    /* Old version
-    int i = 0;
-    while (s2) {
-      char *arg = strsep(&s2, " ");
-      if (strlen(arg)) {
-	args[i] = arg;
-	i++;
-      }
-    }
-    args[i] = 0;
-    */
-
     // New version separates on any whitespace
     // Fills args[] with the arguments from single_input
     int i;
@@ -47,7 +35,7 @@ void process() {
     }
     args[i] = pch;
 
-    // Print  args
+    // Print args for debugging
     printf("----------------------------\n");
     printf("ARGUMENTS\n");
     int k = 0;
