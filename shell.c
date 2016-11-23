@@ -17,7 +17,7 @@
 void print_prompt() {
   char prompt[256];
   getcwd(prompt, 256);
-  printf("%s%s%s%s $ ", CYAN, BOLD, prompt, NRML);
+  printf("%s%s%s%s\n$ ", CYAN, BOLD, prompt, NRML);
 }
 
 char *read_raw() {
