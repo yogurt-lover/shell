@@ -12,8 +12,7 @@
 #define BOLD "\x1B[1m"
 #define DEBUG 0
 
-// signals
-// tab bug (due to prompt)
+// signals (Ctrl-C)
 // resizing buffers
 // redirection < | >
 
@@ -58,7 +57,7 @@ void print_prompt() {
 char *read_raw() {
   char *buff = (char *)malloc(256*sizeof(char));
 
-  /*
+  
   char c;
   int counter = 0;
 
@@ -68,11 +67,12 @@ char *read_raw() {
     c = getchar();
   }
   buff[counter] = '\0';
+  if (c == EOF) printf("\n");
   return buff;
-  */
   
-  fgets(buff, 256, stdin);
-  return buff;
+  
+  //fgets(buff, 256, stdin);
+  //return buff;
 }
 
 char **get_args(char *input, int *num_args) {
