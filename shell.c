@@ -14,7 +14,8 @@
 
 // signals (Ctrl-C)
 // resizing buffers
-// redirection < | >
+// redirection << < | > >>
+// cd ~
 
 char *get_home_dir() {
   struct passwd *pw = getpwuid(getuid());
