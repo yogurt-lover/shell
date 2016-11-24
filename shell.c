@@ -3,21 +3,38 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
 #include <errno.h>
+#include <pwd.h>
 
 #define NRML "\x1B[0m"
 #define CYAN "\x1B[36m"
 #define BOLD "\x1B[1m"
+#define DEBUG 0
 
 // signals
 // tab bug (due to prompt)
 // resizing buffers
 // redirection < | >
 
+char *get_home_dir() {
+  struct passwd *pw = getpwuid(getuid());
+  return pw->pw_dir;
+}
+
 void print_prompt() {
-  char prompt[256];
+  char *prompt = (char *)malloc(256*sizeof(char));
   getcwd(prompt, 256);
-  printf("%s%s%s%s\n$ ", CYAN, BOLD, prompt, NRML);
+
+  char *home = get_home_dir();
+  if (strstr(prompt, home)) {
+    char *s = prompt;
+    printf("%s%s~%s%s\n$ ", CYAN, BOLD, s+strlen(home), NRML );
+  }
+  else {
+    printf("%s%s%s%s\n$ ", CYAN, BOLD, prompt, NRML);
+  }
+  free(prompt);
 }
 
 char *read_raw() {
@@ -46,7 +63,6 @@ char **get_args(char *input, int *num_args) {
   int counter;
   for (counter = 0; arg; counter++) {
     args[counter] = arg;
-    //printf("~~~%s~~~\n", args[counter]);
     arg = strtok(NULL, " \n\r\t");
   }
   args[counter] = arg;
@@ -67,7 +83,8 @@ int execute(char **args, int *num_args) {
       }
     }
     else {
-      chdir("/\n"); //change this to home directory 
+      char *home = get_home_dir();
+      chdir(home);
     }
     return 1;
   }
@@ -81,13 +98,15 @@ int execute(char **args, int *num_args) {
   int f = fork();
   if (f == 0) {
 
-    // colorized ls
+    // colorized ls (Doesn't work in BSD)
+    /*
     if (!strcmp(args[0], "ls")) {
       args[*num_args] = "--color=auto";
       *num_args += 1;
       args[*num_args] = NULL;
     }
-    
+    */
+
     if (execvp(args[0], args) == -1) {
       printf("%s: command not found\n", args[0]);
     }
@@ -104,7 +123,7 @@ int process() {
   
   print_prompt(); 
   raw_input = read_raw();
-  //printf("raw: ~~~%s~~~\n", raw_input);
+  if (DEBUG) printf("raw_input: ~~~%s~~~\n", raw_input);
   
   char *s = raw_input;
   while (s) {
@@ -113,20 +132,19 @@ int process() {
     char **args;
 
     single_input = strsep(&s, ";");
-    //printf("single:~~~%s~~~\n", single_input);
+    if (DEBUG) printf("single_input:~~~%s~~~\n", single_input);
     args = get_args(single_input, &num_args);
-    //printf("args[0]: ~~~%s~~~\n", args[0]);
-    
-    /*
-    printf("----------------------------\n");
-    printf("ARGUMENTS\n");
-    int k = 0;
-    for (; k < num_args; k++) {
-      printf("arg: ~~~%s~~~\n", args[k]);
-    }
-    printf("----------------------------\n");
-    */
 
+    if (DEBUG) {
+      printf("----------------------------\n");
+      printf("ARGUMENTS\n");
+      int k = 0;
+      for (; k < num_args; k++) {
+	printf("arg: ~~~%s~~~\n", args[k]);
+      }
+      printf("----------------------------\n");
+    }
+    
     status = execute(args, &num_args);
     free(args);
   }
@@ -138,7 +156,7 @@ int main() {
   int status = 1;
   while (status) {
     status = process();
-    //printf("status: %d\n", status);
+    if (DEBUG) printf("status: %d\n", status);
   }
   return 0;
 }
