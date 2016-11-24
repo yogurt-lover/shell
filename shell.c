@@ -22,19 +22,37 @@ char *get_home_dir() {
   return pw->pw_dir;
 }
 
-void print_prompt() {
-  char *prompt = (char *)malloc(256*sizeof(char));
-  getcwd(prompt, 256);
+char *get_username() {
+  struct passwd *pw = getpwuid(getuid());
+  return pw->pw_name;  
+}
 
+char *get_hostname() {
+  char *hostname = (char *)malloc(256*sizeof(char));;
+  gethostname(hostname, 256);
+  return hostname;
+}
+
+char *get_cwd() {
+  char *cwd = (char *)malloc(256*sizeof(char));
+  getcwd(cwd, 256);
+  return cwd;
+}
+
+void print_prompt() {
+  char *cwd = get_cwd();
+  char *username = get_username();
+  char *hostname = get_hostname();
   char *home = get_home_dir();
-  if (strstr(prompt, home)) {
-    char *s = prompt;
-    printf("%s%s~%s%s\n$ ", CYAN, BOLD, s+strlen(home), NRML );
+  if (strstr(cwd, home)) {
+    char *s = cwd;
+    printf("%s%s%s@%s:~%s%s\n$ ", CYAN, BOLD, username, hostname, s+strlen(home), NRML );
   }
   else {
-    printf("%s%s%s%s\n$ ", CYAN, BOLD, prompt, NRML);
+    printf("%s%s%s@%s:%s%s\n$ ", CYAN, BOLD, username, hostname, cwd, NRML);
   }
-  free(prompt);
+  free(hostname);
+  free(cwd);
 }
 
 char *read_raw() {
