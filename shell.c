@@ -19,6 +19,7 @@
 // cd -
 // print error messages
 // previous command
+// config + builtins
 
 char *get_home_dir() {
 	struct passwd *pw = getpwuid(getuid());
@@ -63,7 +64,7 @@ char *read_raw() {
 		c = getchar();
 	}
 	buff[counter] = '\0';
-	if (c == EOF) printf("\n");
+	if (c == EOF) fprintf(stderr, "\n");
 	return buff;
 }
 
@@ -90,7 +91,7 @@ int execute(char **args, int *num_args) {
 	if (!strcmp(args[0], "cd")) {
 		if (args[1] && strcmp(args[1], "~")) { // modify ~ ?
 			if (chdir(args[1])) {
-					printf("%s\n", strerror(errno));
+					fprintf(stderr, "%s\n", strerror(errno));
 			}
 		}
 		else {
@@ -119,7 +120,7 @@ int execute(char **args, int *num_args) {
 		 */
 
 		if (execvp(args[0], args) == -1) {
-			printf("%s: command not found\n", args[0]);
+			fprintf(stderr, "%s: command not found\n", args[0]);
 		}
 	}
 	else {
@@ -129,7 +130,7 @@ int execute(char **args, int *num_args) {
 	return 1;
 }
 
-void change_stdout(char **input, int *redirect, int *dup_stdout, int *new_stdout) {
+int change_stdout(char **input, int *redirect, int *dup_stdout, int *new_stdout) {
 	char *new_stdout_path;
 	int append_flag = strstr(*input, ">>") ? O_APPEND : O_TRUNC ;
 
@@ -147,10 +148,15 @@ void change_stdout(char **input, int *redirect, int *dup_stdout, int *new_stdout
 		close(1);
 		*new_stdout = open(new_stdout_path, O_WRONLY | append_flag | O_CREAT , 0644);
 	}
+	else {
+		fprintf(stderr, "shell: File to redirect to not specified\n");
+		return 0;
+	}
 	if (DEBUG) fprintf(stderr, "redirect after >: %d\n", *redirect);
+	return 1;
 }
 
-void change_stdin(char **input, int *redirect, int *dup_stdin, int *new_stdin) {
+int change_stdin(char **input, int *redirect, int *dup_stdin, int *new_stdin) {
 	char *new_stdin_path;
 
 	char *input_dup = *input;
@@ -167,7 +173,12 @@ void change_stdin(char **input, int *redirect, int *dup_stdin, int *new_stdin) {
 		close(0);
 		*new_stdin = open(new_stdin_path, O_RDONLY);
 	}
+	else {
+		fprintf(stderr, "shell: File to redirect from no specified\n");
+		return 0;
+	}
 	if (DEBUG) fprintf(stderr, "redirect after <: %d\n", *redirect);
+	return 1;
 }
 
 void restore_stdout(int dup_stdout, int new_stdout) {
@@ -207,14 +218,16 @@ int process() {
 		char *single_input;
 		char **args;
 
-		redirect = 0b00;
+		redirect = 0;
 
 		single_input = strsep(&s, ";");
 		if (DEBUG) fprintf(stderr, "single_input:~|%s|~\n", single_input);
 		if (!single_input || !strlen(single_input)) return 1;
 
-		if (strchr(single_input, '>')) change_stdout(&single_input, &redirect, &dup_stdout, &new_stdout);
-		if (strchr(single_input, '<')) change_stdin(&single_input, &redirect, &dup_stdin, &new_stdin);
+		if (strchr(single_input, '>')) 
+			if (!change_stdout(&single_input, &redirect, &dup_stdout, &new_stdout)) return 1;
+		if (strchr(single_input, '<')) 
+			if (!change_stdin(&single_input, &redirect, &dup_stdin, &new_stdin)) return 1;
 
 		args = get_args(single_input, &num_args);
 		if (DEBUG) print_args(args, num_args);
