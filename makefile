@@ -1,7 +1,7 @@
 default: shell
 
 shell: shell.c
-	gcc -o shell shell.c -Wall
+	gcc -o shell shell.c -g -Wall
 
 run: shell
 	./shell
