@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <pwd.h>
 #include <sys/wait.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 
 #define NRML "\x1B[0m"
 #define CYAN "\x1B[36m"
@@ -27,7 +27,7 @@ char *get_home_dir() {
 
 char *get_username() {
 	struct passwd *pw = getpwuid(getuid());
-	return pw->pw_name;  
+	return pw->pw_name;
 }
 
 char *get_hostname() {
@@ -156,7 +156,7 @@ void change_stdin(char **input, int *redirect, int *dup_stdin, int *new_stdin) {
 	char *input_dup = *input;
 	*input = strsep(&input_dup, "<");
 	if (DEBUG) fprintf(stderr, "new input: ~|%s|~\n", *input);
-	
+
 	new_stdin_path = strtok(input_dup, "<");
 	new_stdin_path = strtok(new_stdin_path, " \n\r\t");
 
@@ -165,7 +165,7 @@ void change_stdin(char **input, int *redirect, int *dup_stdin, int *new_stdin) {
 		*redirect = *redirect | 0b10;
 		*dup_stdin = dup(0);
 		close(0);
-		*new_stdin = open(new_stdin_path, O_RDONLY); 
+		*new_stdin = open(new_stdin_path, O_RDONLY);
 	}
 	if (DEBUG) fprintf(stderr, "redirect after <: %d\n", *redirect);
 }
@@ -196,7 +196,7 @@ int process() {
 	int status;
 	char *raw_input;
 
-	print_prompt(); 
+	print_prompt();
 	raw_input = read_raw();
 	if (DEBUG) fprintf(stderr, "raw_input: ~|%s|~\n", raw_input);
 
@@ -215,15 +215,15 @@ int process() {
 
 		if (strchr(single_input, '>')) change_stdout(&single_input, &redirect, &dup_stdout, &new_stdout);
 		if (strchr(single_input, '<')) change_stdin(&single_input, &redirect, &dup_stdin, &new_stdin);
-		
+
 		args = get_args(single_input, &num_args);
-		if (DEBUG) print_args(args, num_args); 
+		if (DEBUG) print_args(args, num_args);
 
 		status = execute(args, &num_args);
-		
+
 		if (redirect & 0b01) restore_stdout(dup_stdout, new_stdout);
 		if (redirect & 0b10) restore_stdin(dup_stdin, new_stdin);
-		
+
 		free(args);
 	}
 	free(raw_input);
