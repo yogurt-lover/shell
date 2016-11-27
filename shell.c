@@ -21,8 +21,6 @@
 // previous command
 // config + builtins
 // *
-// multiple <, >
-// no need for new_std*?
 
 
 char *get_home_dir() {
@@ -54,8 +52,13 @@ void print_prompt() {
 	char *username = get_username();
 	char *hostname = get_hostname();
 	char *home = get_home_dir();
-	char *dir = strstr(cwd, home) ? cwd+strlen(home) : cwd;
-	printf("%s%s%s@%s:~%s%s\n$ ", CYAN, BOLD, username, hostname, dir, NRML );
+	char *dir = cwd;
+	char in_home_dir = 0;
+	if (strstr(cwd, home)) {
+		dir += strlen(home);
+		in_home_dir = '~';
+	}
+	printf("%s%s%s@%s:%c%s%s\n$ ", CYAN, BOLD, username, hostname, in_home_dir, dir, NRML );
 	free(hostname);
 	free(cwd);
 }
@@ -70,7 +73,10 @@ char *read_raw() {
 		c = getchar();
 	}
 	buff[counter] = '\0';
-	if (c == EOF) fprintf(stderr, "\n");
+	if (c == EOF) {
+		fprintf(stderr, "\n");
+		//exit(1);
+	}
 	return buff;
 }
 
@@ -119,20 +125,37 @@ int execute(char **args, int *num_args) {
 	return 1;
 }
 
-int change_stdout(char *input, int *redirect, int *dup_stdout, int *new_stdout) {
-	char *new_stdout_path;
+int change_stdout(char *input, int *redirect, int *dup_stdout, int *dup_stderr) {
+	char *new_out_path;
 	int append_flag = strstr(input, ">>") ? O_APPEND : O_TRUNC;
 
 	char *input_dup = strdup(input);
 	strsep(&input_dup, ">");
-	new_stdout_path = strtok(input_dup, " \n\r\t");
+	new_out_path = strtok(input_dup, " >\n\r\t");
 
-	if (DEBUG) fprintf(stderr, "new_stdout_path: ~|%s|~\n", new_stdout_path);
-	if (new_stdout_path) {
-		*redirect = *redirect | 0b01;
-		*dup_stdout = dup(1);
-		close(1);
-		*new_stdout = open(new_stdout_path, O_WRONLY | append_flag | O_CREAT , 0644);
+	if (DEBUG) fprintf(stderr, "new_out_path: ~|%s|~\n", new_out_path);
+	if (new_out_path) {
+		if (strstr(input, "&>")) {
+			*redirect = *redirect | 0b110;
+			*dup_stdout = dup(STDOUT_FILENO);
+			*dup_stderr = dup(STDERR_FILENO);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+			open(new_out_path, O_WRONLY | append_flag | O_CREAT, 0644); // opens with fd 1
+			dup2(STDOUT_FILENO, STDERR_FILENO); // dup 1 to 2
+		}
+		else if (strstr(input, "2>")) {
+			*redirect = *redirect | 0b100;
+			*dup_stderr = dup(STDERR_FILENO);
+			close(STDERR_FILENO);
+			open(new_out_path, O_WRONLY | append_flag | O_CREAT , 0644); // opens with fd 2
+		}
+		else {
+			*redirect = *redirect | 0b010;
+			*dup_stdout = dup(STDOUT_FILENO);
+			close(STDOUT_FILENO);
+			open(new_out_path, O_WRONLY | append_flag | O_CREAT , 0644); // opens with fd 1
+		}
 	}
 	else {
 		fprintf(stderr, "shell: OUT file not specified\n");
@@ -142,7 +165,7 @@ int change_stdout(char *input, int *redirect, int *dup_stdout, int *new_stdout) 
 	return 1;
 }
 
-int change_stdin(char *input, int *redirect, int *dup_stdin, int *new_stdin) {
+int change_stdin(char *input, int *redirect, int *dup_stdin) {
 	char *new_stdin_path;
 
 	char *input_dup = strdup(input);
@@ -151,10 +174,10 @@ int change_stdin(char *input, int *redirect, int *dup_stdin, int *new_stdin) {
 
 	if (DEBUG) fprintf(stderr, "new_stdin_path: ~|%s|~\n", new_stdin_path);
 	if (new_stdin_path) {
-		*redirect = *redirect | 0b10;
-		*dup_stdin = dup(0);
-		close(0);
-		*new_stdin = open(new_stdin_path, O_RDONLY);
+		*redirect = *redirect | 0b001;
+		*dup_stdin = dup(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		open(new_stdin_path, O_RDONLY);
 	}
 	else {
 		fprintf(stderr, "shell: IN file not specified\n");
@@ -164,16 +187,22 @@ int change_stdin(char *input, int *redirect, int *dup_stdin, int *new_stdin) {
 	return 1;
 }
 
-void restore_stdout(int dup_stdout, int new_stdout) {
-	close(new_stdout);
-	dup2(dup_stdout, 1);
+void restore_stdin(int dup_stdin) {
+	close(STDIN_FILENO);
+	dup(dup_stdin);
+	close(dup_stdin);
+}
+
+void restore_stdout(int dup_stdout) {
+	close(STDOUT_FILENO);
+	dup(dup_stdout);
 	close(dup_stdout);
 }
 
-void restore_stdin(int dup_stdin, int new_stdin) {
-	close(new_stdin);
-	dup2(dup_stdin, 0);
-	close(dup_stdin);
+void restore_stderr(int dup_stderr) {
+	close(STDERR_FILENO);
+	dup(dup_stderr);
+	close(dup_stderr);
 }
 
 void print_args(char **args, int num_args) {
@@ -195,7 +224,7 @@ int process() {
 	char *s = raw_input;
 	while (s) {
 		int num_args;
-		int redirect, dup_stdout, new_stdout, dup_stdin, new_stdin;
+		int redirect, dup_stdin, dup_stdout, dup_stderr;
 		char *single_input;
 		char **args;
 
@@ -207,27 +236,37 @@ int process() {
 		if (!single_input || !strlen(single_input)) return 1;
 
 		if (strchr(single_input, '>'))
-			if (!change_stdout(single_input, &redirect, &dup_stdout, &new_stdout)) return 1;
+			if (!change_stdout(single_input, &redirect, &dup_stdout, &dup_stderr)) return 1;
 
 		if (strchr(single_input, '<'))
-			if (!change_stdin(single_input, &redirect, &dup_stdin, &new_stdin)) return 1;
+			if (!change_stdin(single_input, &redirect, &dup_stdin)) return 1;
 
 		single_input = strsep(&single_input, "><");
+		if (redirect & 0b010 || redirect & 0b100) {
+			char last_char = single_input[strlen(single_input)-1];
+			if (DEBUG) fprintf(stderr, "last_char: %c\n", last_char);
+			if (last_char == '&' || last_char == '1' || last_char == '2')
+				*strrchr(single_input, last_char) = 0;
+		}
+
 		if (DEBUG) fprintf(stderr, "new single_input:~|%s|~\n", single_input);
 
 		//piping goes here
+		/*
 		int pipe_num;
 		char *p = single_input;
 		for (pipe_num = 0; p[pipe_num]; p[pipe_num]=='|' ? pipe_num++ : *p++);
 		if (DEBUG) fprintf(stderr, "pipe_num: %d\n", pipe_num);
+		*/
 
 		args = get_args(single_input, &num_args);
 		if (DEBUG) print_args(args, num_args);
 
 		status = execute(args, &num_args);
 
-		if (redirect & 0b01) restore_stdout(dup_stdout, new_stdout);
-		if (redirect & 0b10) restore_stdin(dup_stdin, new_stdin);
+		if (redirect & 0b001) restore_stdin(dup_stdin);
+		if (redirect & 0b010) restore_stdout(dup_stdout);
+		if (redirect & 0b100) restore_stderr(dup_stderr);
 
 		free(args);
 	}
