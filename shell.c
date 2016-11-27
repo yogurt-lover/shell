@@ -219,7 +219,7 @@ int process() {
 		int pipe_num;
 		char *p = single_input;
 		for (pipe_num = 0; p[pipe_num]; p[pipe_num]=='|' ? pipe_num++ : *p++);
-		fprintf(stderr, "pipe_num: %d\n", pipe_num);
+		if (DEBUG) fprintf(stderr, "pipe_num: %d\n", pipe_num);
 
 		args = get_args(single_input, &num_args);
 		if (DEBUG) print_args(args, num_args);
