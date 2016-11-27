@@ -3,7 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <pwd.h>
 
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -24,13 +23,11 @@
 
 
 char *get_home_dir() {
-	struct passwd *pw = getpwuid(getuid());
-	return pw->pw_dir;
+	return getenv("HOME");
 }
 
 char *get_username() {
-	struct passwd *pw = getpwuid(getuid());
-	return pw->pw_name;
+	return getenv("USER");
 }
 
 char *get_hostname() {
@@ -59,8 +56,8 @@ void print_prompt() {
 		in_home_dir = '~';
 	}
 	printf("%s%s%s@%s:%c%s%s\n$ ", CYAN, BOLD, username, hostname, in_home_dir, dir, NRML );
-	free(hostname);
 	free(cwd);
+	free(hostname);
 }
 
 char *read_raw() {
