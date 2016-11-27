@@ -37,14 +37,14 @@ char *get_username() {
 
 char *get_hostname() {
 	char *hostname = (char *)malloc(256*sizeof(char));
-	hostname[256] = '\0';
+	hostname[255] = '\0';
 	gethostname(hostname, 255);
 	return hostname;
 }
 
 char *get_cwd() {
 	char *cwd = (char *)malloc(256*sizeof(char));
-	cwd[256] = '\0';
+	cwd[255] = '\0';
 	getcwd(cwd, 255);
 	return cwd;
 }
