@@ -92,7 +92,7 @@ char **get_args(char *input, int *num_args) {
 }
 
 int execute(char **args, int *num_args) {
-	if (DEBUG) fprintf(stderr, "OUTPUT:\n----------------------------\n");
+	if (DEBUG) fprintf(stderr, "OUTPUT:<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 
 	// whitespace or no characters at all
 	if (!args[0]) return 1;
@@ -116,9 +116,9 @@ int execute(char **args, int *num_args) {
 			fprintf(stderr, "%s: command not found\n", args[0]);
 		}
 	}
-	else wait(NULL);
+	else while (wait(NULL) > 0);
 
-	if (DEBUG) fprintf(stderr, "----------------------------\n");
+	if (DEBUG) fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 	return 1;
 }
 
@@ -203,11 +203,10 @@ void restore_stderr(int dup_stderr) {
 }
 
 void print_args(char **args, int num_args) {
-	fprintf(stderr, "----------------------------\n");
-	fprintf(stderr, "ARGUMENTS\n");
+	fprintf(stderr, "ARGUMENTS:<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 	int k = 0;
 	for (; k < num_args; k++) fprintf(stderr, "arg: ~|%s|~\n", args[k]);
-	fprintf(stderr, "----------------------------\n");
+	fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 }
 
 int process() {
