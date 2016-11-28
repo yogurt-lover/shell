@@ -10,7 +10,7 @@
 #define NRML "\x1B[0m"
 #define CYAN "\x1B[36m"
 #define BOLD "\x1B[1m"
-#define DEBUG 0
+#define DEBUG 1
 
 // signals (Ctrl-C)
 // resizing buffers
@@ -224,6 +224,10 @@ int process() {
 		char *single_input;
 		char **args;
 
+		// redirect is a binary int:
+		// 0b001: stdin was changed
+		// 0b010: stdout was changed
+		// 0b100: stderr was changed
 		redirect = 0;
 
 		single_input = strsep(&s, ";");
