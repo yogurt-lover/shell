@@ -247,13 +247,62 @@ int process() {
 
 		if (DEBUG) fprintf(stderr, "new single_input:~|%s|~\n", single_input);
 
+
+		int pipes[2][2];
 		int pipe_num;
 		char *p = single_input;
+		int command_num = 0;
 		for (pipe_num = 0; p[pipe_num]; p[pipe_num]=='|' ? pipe_num++ : *p++);
 		if (DEBUG) fprintf(stderr, "pipe_num: %d\n", pipe_num);
 
-
+		char *q = single_input;
+		while (q) {
+			single_input = strsep(&q, "|");
+			args = get_args(single_input, &num_args);
+			pipe(pipes[command_num % 2]);
+			int f = fork();
+			if (f == 0) {
+				if (pipe_num == 0) {
+					execvp(args[0], args);
+				}
+				else {
+					if (command_num == 0) {
+						close(STDOUT_FILENO);
+						dup(pipes[0][1]);
+						close(pipes[0][0]);
+						close(pipes[0][1]);
+						execvp(args[0], args);
+					}
+					if (command_num == pipe_num) {
+						close(STDIN_FILENO);
+						dup(pipes[(command_num + 1) % 2][0]);
+						close(pipes[(command_num + 1) % 2][0]);
+						close(pipes[(command_num + 1) % 2][1]);
+						execvp(args[0], args);
+					}
+					else {
+						close(STDIN_FILENO);
+						dup(pipes[(command_num + 1) % 2][0]);
+						close(pipes[(command_num + 1) % 2][0]);
+						close(pipes[(command_num + 1) % 2][1]);
+						close(STDOUT_FILENO);
+						dup(pipes[command_num % 2][1]);
+						close(pipes[command_num % 2][0]);
+						close(pipes[command_num % 2][1]);
+						execvp(args[0], args);
+					}
+				}
+			}
+			if (command_num > 0) {
+				close(pipes[(command_num + 1) % 2][0]);
+				close(pipes[(command_num + 1) % 2][1]);
+			}
+			command_num++;
+		}
+		while (wait(NULL) > 0);
+		status = 1;
 		/** Block for 1 pipe **/
+		/**
 		if (pipe_num) {
 			char *q = single_input;
 			int pfds[2];
@@ -294,13 +343,16 @@ int process() {
 			while (wait(NULL) > 0);
 			status = 1;
 		}
+		**/
 		/** End Block **/
 
+		/**
 		else {
 			args = get_args(single_input, &num_args);
 			if (DEBUG) print_args(args, num_args);
 			status = execute(args, &num_args);
 		}
+		**/
 
 		if (redirect & 0b001) restore_stdin(dup_stdin);
 		if (redirect & 0b010) restore_stdout(dup_stdout);
