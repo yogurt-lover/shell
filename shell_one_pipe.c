@@ -10,6 +10,9 @@
 #define NRML "\x1B[0m"
 #define CYAN "\x1B[36m"
 #define BOLD "\x1B[1m"
+#define STDIN_CHANGED 0b001
+#define STDOUT_CHANGED 0b010
+#define STDERR_CHANGED 0b100
 #define DEBUG 0
 
 // signals (Ctrl-C)
@@ -91,37 +94,6 @@ char **get_args(char *input, int *num_args) {
 	return args;
 }
 
-int execute(char **args, int *num_args) {
-	if (DEBUG) fprintf(stderr, "OUTPUT:<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-
-	// whitespace or no characters at all
-	if (!args[0]) return 1;
-
-	// cd (might put this someplace else)
-	if (!strcmp(args[0], "cd")) {
-		if (args[1]) {
-			if (chdir(args[1])) perror("shell");
-		}
-		else chdir(get_home_dir());
-		return 1;
-	}
-
-	// exit (this too)
-	if (!strcmp(args[0], "exit")) return 0;
-
-	// system binaries
-	int f = fork();
-	if (f == 0) {
-		if (execvp(args[0], args) == -1) {
-			fprintf(stderr, "shell: %s: command not found\n", args[0]);
-		}
-	}
-	else while (wait(NULL) > 0);
-
-	if (DEBUG) fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-	return 1;
-}
-
 int change_stdout(char *input, int *redirect, int *dup_stdout, int *dup_stderr) {
 	char *new_out_path;
 	int append_flag = strstr(input, ">>") ? O_APPEND : O_TRUNC;
@@ -133,7 +105,8 @@ int change_stdout(char *input, int *redirect, int *dup_stdout, int *dup_stderr) 
 	if (DEBUG) fprintf(stderr, "new_out_path: ~|%s|~\n", new_out_path);
 	if (new_out_path) {
 		if (strstr(input, "&>")) {
-			*redirect = *redirect | 0b110;
+			*redirect = *redirect | STDOUT_CHANGED;
+			*redirect = *redirect | STDERR_CHANGED;
 			*dup_stdout = dup(STDOUT_FILENO);
 			*dup_stderr = dup(STDERR_FILENO);
 			close(STDOUT_FILENO);
@@ -142,13 +115,13 @@ int change_stdout(char *input, int *redirect, int *dup_stdout, int *dup_stderr) 
 			dup2(STDOUT_FILENO, STDERR_FILENO); // dup 1 to 2
 		}
 		else if (strstr(input, "2>")) {
-			*redirect = *redirect | 0b100;
+			*redirect = *redirect | STDERR_CHANGED;
 			*dup_stderr = dup(STDERR_FILENO);
 			close(STDERR_FILENO);
 			open(new_out_path, O_WRONLY | append_flag | O_CREAT , 0644); // opens with fd 2
 		}
 		else {
-			*redirect = *redirect | 0b010;
+			*redirect = *redirect | STDOUT_CHANGED;
 			*dup_stdout = dup(STDOUT_FILENO);
 			close(STDOUT_FILENO);
 			open(new_out_path, O_WRONLY | append_flag | O_CREAT , 0644); // opens with fd 1
@@ -171,7 +144,7 @@ int change_stdin(char *input, int *redirect, int *dup_stdin) {
 
 	if (DEBUG) fprintf(stderr, "new_stdin_path: ~|%s|~\n", new_stdin_path);
 	if (new_stdin_path) {
-		*redirect = *redirect | 0b001;
+		*redirect = *redirect | STDIN_CHANGED;
 		*dup_stdin = dup(STDIN_FILENO);
 		close(STDOUT_FILENO);
 		open(new_stdin_path, O_RDONLY);
@@ -209,8 +182,40 @@ void print_args(char **args, int num_args) {
 	fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 }
 
-int process() {
-	int status;
+void cd_def(char **args) {
+	if (args[1])
+		if (chdir(args[1])) perror("shell");
+	else chdir(get_home_dir());
+}
+
+void exec_pipe(char **args) {
+	if (!strcmp(args[0], "cd")) {
+		cd_def(args);
+		return;
+	}
+	if (!strcmp(args[0], "exit")) return;
+	if (execvp(args[0], args) == -1) {
+		fprintf(stderr, "shell: %s: command not found in PATH\n", args[0]);
+	}
+}
+
+void exec_no_pipe(char **args, int *status) {
+	if (!args[0]) return;
+	if (!strcmp(args[0], "cd")) {
+		cd_def(args);
+		return;
+	}
+	if (!strcmp(args[0], "exit")) *status = 0;
+	int f = fork();
+	if (f == 0) {
+		if (execvp(args[0], args) == -1) {
+			fprintf(stderr, "shell: %s: command not found in PATH\n", args[0]);
+		}
+	}
+}
+
+void process() {
+	int status = 1;
 	char *raw_input;
 
 	print_prompt();
@@ -223,22 +228,21 @@ int process() {
 		int redirect, dup_stdin, dup_stdout, dup_stderr;
 		char *single_input;
 		char **args;
-
 		redirect = 0;
 
 		single_input = strsep(&s, ";");
 		if (DEBUG) fprintf(stderr, "single_input:~|%s|~\n", single_input);
 
-		if (!single_input || !strlen(single_input)) return 1;
+		if (!single_input || !strlen(single_input)) return;
 
 		if (strchr(single_input, '>'))
-			if (!change_stdout(single_input, &redirect, &dup_stdout, &dup_stderr)) return 1;
+			if (!change_stdout(single_input, &redirect, &dup_stdout, &dup_stderr)) return;
 
 		if (strchr(single_input, '<'))
-			if (!change_stdin(single_input, &redirect, &dup_stdin)) return 1;
+			if (!change_stdin(single_input, &redirect, &dup_stdin)) return;
 
 		single_input = strsep(&single_input, "><");
-		if (redirect & 0b010 || redirect & 0b100) {
+		if (redirect & STDOUT_CHANGED || redirect & STDERR_CHANGED) {
 			char last_char = single_input[strlen(single_input)-1];
 			if (DEBUG) fprintf(stderr, "last_char: %c\n", last_char);
 			if (last_char == '&' || last_char == '1' || last_char == '2')
@@ -258,27 +262,30 @@ int process() {
 		char *q = single_input;
 		while (q) {
 			single_input = strsep(&q, "|");
+			if (DEBUG) fprintf(stderr, "new single_input:~|%s|~\n", single_input);
+			// if pipe token empty
 			args = get_args(single_input, &num_args);
-			pipe(pipes[command_num % 2]);
-			int f = fork();
-			if (f == 0) {
-				if (pipe_num == 0) {
-					execvp(args[0], args);
-				}
-				else {
+			if (DEBUG) print_args(args, num_args);
+			if (!num_args) {  fprintf(stderr, "shell: expected a command to pipe through\n");break;  }
+			if (pipe_num) {
+				pipe(pipes[command_num % 2]);
+				int f = fork();
+				if (f == 0) {
 					if (command_num == 0) {
 						close(STDOUT_FILENO);
 						dup(pipes[0][1]);
 						close(pipes[0][0]);
 						close(pipes[0][1]);
-						execvp(args[0], args);
+						exec_pipe(args);
+						return;
 					}
 					if (command_num == pipe_num) {
 						close(STDIN_FILENO);
 						dup(pipes[(command_num + 1) % 2][0]);
 						close(pipes[(command_num + 1) % 2][0]);
 						close(pipes[(command_num + 1) % 2][1]);
-						execvp(args[0], args);
+						exec_pipe(args);
+						return;
 					}
 					else {
 						close(STDIN_FILENO);
@@ -289,84 +296,34 @@ int process() {
 						dup(pipes[command_num % 2][1]);
 						close(pipes[command_num % 2][0]);
 						close(pipes[command_num % 2][1]);
-						execvp(args[0], args);
+						exec_pipe(args);
+						return;
 					}
 				}
+				if (command_num > 0) {
+					close(pipes[(command_num + 1) % 2][0]);
+					close(pipes[(command_num + 1) % 2][1]);
+				}
+
 			}
-			if (command_num > 0) {
-				close(pipes[(command_num + 1) % 2][0]);
-				close(pipes[(command_num + 1) % 2][1]);
+			else {
+				exec_no_pipe(args, &status);
 			}
 			command_num++;
 		}
 		while (wait(NULL) > 0);
-		status = 1;
-		/** Block for 1 pipe **/
-		/**
-		if (pipe_num) {
-			char *q = single_input;
-			int pfds[2];
-			pipe(pfds);
 
-			single_input = strsep(&q, "|");
-			if (DEBUG) fprintf(stderr, "split single_input: ~|%s|~\n", single_input);
-			args = get_args(single_input, &num_args);
-			if (DEBUG) print_args(args, num_args);
-
-			if (DEBUG) fprintf(stderr, "OUTPUT:<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-			int f1 = fork();
-			if (f1 == 0) {
-				dup2(pfds[1], STDOUT_FILENO);
-				close(pfds[0]);
-				close(pfds[1]);
-				execvp(args[0], args);
-			}
-			if (DEBUG) fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-
-			single_input = strsep(&q, "|");
-			if (DEBUG) fprintf(stderr, "split single_input: ~|%s|~\n", single_input);
-			args = get_args(single_input, &num_args);
-			if (DEBUG) print_args(args, num_args);
-
-			if (DEBUG) fprintf(stderr, "OUTPUT:<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-			int f2 = fork();
-			if (f2 == 0) {
-				dup2(pfds[0], STDIN_FILENO);
-				close(pfds[0]);
-				close(pfds[1]);
-				execvp(args[0], args);
-			}
-			if (DEBUG) fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-
-			close(pfds[0]);
-			close(pfds[1]);
-			while (wait(NULL) > 0);
-			status = 1;
-		}
-		**/
-		/** End Block **/
-
-		/**
-		else {
-			args = get_args(single_input, &num_args);
-			if (DEBUG) print_args(args, num_args);
-			status = execute(args, &num_args);
-		}
-		**/
-
-		if (redirect & 0b001) restore_stdin(dup_stdin);
-		if (redirect & 0b010) restore_stdout(dup_stdout);
-		if (redirect & 0b100) restore_stderr(dup_stderr);
+		if (redirect & STDIN_CHANGED) restore_stdin(dup_stdin);
+		if (redirect & STDOUT_CHANGED) restore_stdout(dup_stdout);
+		if (redirect & STDERR_CHANGED) restore_stderr(dup_stderr);
 
 		free(args);
 	}
 	free(raw_input);
-	if (DEBUG) fprintf(stderr, "status: %d\n", status);
-	return status;
+	if (!status) exit(EXIT_SUCCESS);
 }
 
 int main() {
-	int status = 1;
-	while (status) status = process();
+	while (1) process();
 	return 0;
 }
