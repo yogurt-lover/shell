@@ -6,11 +6,15 @@
 
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
+#include <sys/stat.h>
 
 #define NRML "\x1B[0m"
 #define CYAN "\x1B[36m"
 #define BOLD "\x1B[1m"
 #define DEBUG 1
+#define COLORLINUX "--color=auto"
+#define COLORMAC "-G"
 
 // signals (Ctrl-C)
 // resizing buffers
@@ -21,6 +25,21 @@
 // config + builtins
 // *
 
+char *detOS() {
+	struct utsname unameData;
+	uname(&unameData);
+	char response[10];
+	strcpy(response, unameData.sysname);
+	if (DEBUG) printf("OS String: %s\n-----------\n", response);
+	char mac[] = "Darwin";
+	char linux[] = "Linux";
+	if (strcmp(response, mac) == 0) {
+		return COLORMAC;
+	};
+	if (strcmp(response, linux) == 0) {
+		return COLORLINUX;
+	}
+}
 
 char *get_home_dir() {
 	return getenv("HOME");
@@ -104,6 +123,13 @@ int execute(char **args, int *num_args) {
 		}
 		else chdir(get_home_dir());
 		return 1;
+	}
+
+	//colorized ls
+	if (!strcmp(args[0], "ls")) {
+		args[*num_args] = detOS();
+		*num_args += 1;
+		args[*num_args] = NULL;
 	}
 
 	// exit (this too)
