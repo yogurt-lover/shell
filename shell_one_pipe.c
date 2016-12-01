@@ -7,14 +7,15 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 
-#define NRML "\x1B[0m"
-#define CYAN "\x1B[36m"
-#define BOLD "\x1B[1m"
+#include "prompt.h"
+#include "parse.h"
+#include "redirect.h"
+
 #define STDIN_CHANGED 0b0001
 #define STDOUT_CHANGED 0b0010
 #define STDERR_CHANGED 0b0100
 #define STD_FAILED 0b1000
-#define DEBUG 1
+#define DEBUG 0
 
 // signals (Ctrl-C)
 // resizing buffers
@@ -24,162 +25,6 @@
 // previous command
 // config + builtins
 // *
-
-
-char *get_home_dir() {
-	return getenv("HOME");
-}
-
-char *get_username() {
-	return getenv("USER");
-}
-
-char *get_hostname() {
-	char *hostname = (char *)malloc(256*sizeof(char));
-	hostname[255] = '\0';
-	gethostname(hostname, 255);
-	return hostname;
-}
-
-char *get_cwd() {
-	char *cwd = (char *)malloc(256*sizeof(char));
-	cwd[255] = '\0';
-	getcwd(cwd, 255);
-	return cwd;
-}
-
-void print_prompt() {
-	char *cwd = get_cwd();
-	char *username = get_username();
-	char *hostname = get_hostname();
-	char *home = get_home_dir();
-	char *dir = cwd;
-	char in_home_dir = 0;
-	if (strstr(cwd, home)) {
-		dir += strlen(home);
-		in_home_dir = '~';
-	}
-	printf("%s%s%s@%s:%c%s%s\n$ ", CYAN, BOLD, username, hostname, in_home_dir, dir, NRML );
-	free(cwd);
-	free(hostname);
-}
-
-char *read_raw() {
-	char *buff = (char *)malloc(256*sizeof(char));
-	char c;
-	int counter = 0;
-	c = getchar();
-	for (; c != '\n' && c != EOF; counter++) {
-		buff[counter] = c;
-		c = getchar();
-	}
-	buff[counter] = '\0';
-	if (c == EOF) {
-		fprintf(stderr, "\n");
-	}
-	return buff;
-}
-
-char **get_args(char *input, int *num_args) {
-	char **args = (char **)malloc(256*sizeof(char*));
-	char *arg = strtok(input, " \n\r\t");
-	int counter;
-	for (counter = 0; arg; counter++) {
-		if (!strcmp(arg, "~")) arg = get_home_dir();
-		args[counter] = arg;
-		arg = strtok(NULL, " \n\r\t");
-	}
-	args[counter] = arg;
-	*num_args = counter;
-	return args;
-}
-
-
-void redirect_stdout(int *redirect, int *dup_stdout) {
-	*redirect = *redirect | STDOUT_CHANGED;
-	*dup_stdout = dup(STDOUT_FILENO);
-	close(STDOUT_FILENO);
-}
-
-void redirect_stderr(int *redirect, int *dup_stderr) {
-	*redirect = *redirect | STDERR_CHANGED;
-	*dup_stderr = dup(STDERR_FILENO);
-	close(STDERR_FILENO);
-}
-
-void redirect_stdin(int *redirect, int *dup_stdin) {
-	*redirect = *redirect | STDIN_CHANGED;
-	*dup_stdin = dup(STDIN_FILENO);
-	close(STDIN_FILENO);
-}
-void change_stdout(char *input, int *redirect, int *dup_stdout, int *dup_stderr) {
-	char *new_out_path;
-	int append_flag = strstr(input, ">>") ? O_APPEND : O_TRUNC;
-
-	char *input_dup = strdup(input);
-	strsep(&input_dup, ">");
-	new_out_path = strtok(input_dup, " >\n\r\t");
-
-	if (DEBUG) fprintf(stderr, "new_out_path: ~|%s|~\n", new_out_path);
-	if (new_out_path) {
-		if (strstr(input, "&>")) {
-			redirect_stdout(redirect, dup_stdout);
-			open(new_out_path, O_WRONLY | append_flag | O_CREAT, 0644); // opens with fd 1
-			redirect_stderr(redirect, dup_stderr);
-			dup2(STDOUT_FILENO, STDERR_FILENO); // dup 1 to 2
-		}
-		else if (strstr(input, "2>")) {
-			redirect_stderr(redirect, dup_stderr);
-			open(new_out_path, O_WRONLY | append_flag | O_CREAT , 0644); // opens with fd 2
-		}
-		else {
-			redirect_stdout(redirect, dup_stdout);
-			open(new_out_path, O_WRONLY | append_flag | O_CREAT , 0644); // opens with fd 1
-		}
-	}
-	else {
-		fprintf(stderr, "shell: OUT file not specified\n");
-		*redirect = *redirect | STD_FAILED;
-	}
-	if (DEBUG) fprintf(stderr, "redirect after >: %d\n", *redirect);
-}
-
-void change_stdin(char *input, int *redirect, int *dup_stdin) {
-	char *new_stdin_path;
-
-	char *input_dup = strdup(input);
-	strsep(&input_dup, "<");
-	new_stdin_path = strtok(input_dup, " \n\r\t");
-
-	if (DEBUG) fprintf(stderr, "new_stdin_path: ~|%s|~\n", new_stdin_path);
-	if (new_stdin_path) {
-		redirect_stdin(redirect, dup_stdin);
-		open(new_stdin_path, O_RDONLY);
-	}
-	else {
-		fprintf(stderr, "shell: IN file not specified\n");
-		*redirect = *redirect | STD_FAILED;
-	}
-	if (DEBUG) fprintf(stderr, "redirect after <: %d\n", *redirect);
-}
-
-void restore_stdin(int dup_stdin) {
-	close(STDIN_FILENO);
-	dup(dup_stdin);
-	close(dup_stdin);
-}
-
-void restore_stdout(int dup_stdout) {
-	close(STDOUT_FILENO);
-	dup(dup_stdout);
-	close(dup_stdout);
-}
-
-void restore_stderr(int dup_stderr) {
-	close(STDERR_FILENO);
-	dup(dup_stderr);
-	close(dup_stderr);
-}
 
 void print_args(char **args, int num_args) {
 	fprintf(stderr, "ARGUMENTS:<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
@@ -202,7 +47,6 @@ void exec_coreutil(char **args) {
 }
 
 void exec_single(char **args, int *status) {
-	//if (!args[0]) return;
 	if (!strcmp(args[0], "cd")) cd_def(args);
 	else if (!strcmp(args[0], "exit")) *status = 0;
 	else {
@@ -254,7 +98,7 @@ int exec_pipe(char **args, int num_args, int command_num, int pipe_num, int pipe
 		return 0;
 	}
 	if (!strcmp(args[0], "cd") || !strcmp(args[0], "exit")) {
-		fprintf(stderr, "shell: cannot pipe through a shell built-ins\n");
+		fprintf(stderr, "shell: cannot pipe through a shell built-in\n");
 		return 0;
 	}
 	pipe(pipes[command_num % 2]);
