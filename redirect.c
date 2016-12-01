@@ -4,14 +4,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <string.h>
+
 #include "redirect.h"
-
-#define STDIN_CHANGED 0b0001
-#define STDOUT_CHANGED 0b0010
-#define STDERR_CHANGED 0b0100
-#define STD_FAILED 0b1000
-
-// DEBUG VAR DEAL WITH
+#include "debug.h"
 
 void redirect_stdout(int *redirect, int *dup_stdout) {
 	*redirect = *redirect | STDOUT_CHANGED;
