@@ -17,6 +17,7 @@ char *read_raw() {
 	buff[counter] = '\0';
 	if (c == EOF) {
 		fprintf(stderr, "\n");
+		exit(EXIT_SUCCESS);
 	}
 	return buff;
 }
