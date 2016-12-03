@@ -17,6 +17,7 @@ Can be used very similarly to your standard Bash shell.
 
 ## Bugs
 * A more complicated command like `ls < filename | grep e | wc > output` will not work (In this case, the parser will set `filename` as the STDIN file and will ignore everything afterwards. But `ls | grep e | wc > output` will work.
+
 ## Files & Function Headers
 ### prompt.c
 ```
