@@ -13,7 +13,7 @@ Can be used very similarly to your standard Bash shell.
 * Did create a colorized "ls" originally, using default colors per operating system, however was dropped in final version due to reorganization of methods and lack to time to re-implement.
 * ~/[nextdir] Does not work. However, ~ itself does work as home.
 * Piping through a built-in doesn't work (kept looping infinitely for some reason). So if this is attempted, SASH will return an error
-* The '$' character in the prompts prints in a new line because when it was printed on the same line as the rest of the prompt, tabbing and deleting would have unexpected results (i.e. characters that were deleted would be displayed)
+* The '$' character in the prompt prints in a new line because when it was printed on the same line as the rest of the prompt, tabbing and deleting would have unexpected results (i.e. characters that were deleted would be displayed)
 
 ## Bugs
 * A more complicated command like `ls < filename | grep e | wc > output` will not work (In this case, the parser will set `filename` as the STDIN file and will ignore everything afterwards. But `ls | grep e | wc > output` will work.
