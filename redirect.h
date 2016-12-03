@@ -17,7 +17,7 @@
  * ====================*/
 void redirect_stdout(int *redirect, int *dup_stdout);
 
-/*======== void redirect_stderrt() ==========
+/*======== void redirect_stderr() ==========
  * Inputs: int *redirect
            int *dup_stderr
  * Returns: none
