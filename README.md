@@ -17,4 +17,4 @@ Can be used very similarly to your standard Bash shell.
 ## Bugs
 
 ## Files & Function Headers
-    TO BE LISTED
+### TO BE LISTED | Seiji, templates have been made for all header files. I didn't write descriptions for pipes.c/redirect.c process() in the main file needs to be completed as well. Are there any bugs that you know of?
