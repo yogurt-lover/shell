@@ -2,9 +2,9 @@
 
 ## Features
 
-A lovely shell capable of executing commands in ones PATH.
-Can be used very similarly to your standard Bash shell.
-You can put as many spaces between flags and commands as you like!
+A lovely shell capable of executing commands in ones PATH.  
+Can be used very similarly to your standard Bash shell.  
+You can put as many spaces between flags and commands as you like!  
 * Presents your host name and current working directory in a beautiful light blue.
 * Will fork and execute commands.
 * Can run multiple commands listed in one line, separated by ";"
