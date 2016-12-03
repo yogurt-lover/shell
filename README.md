@@ -7,7 +7,7 @@ Can be used very similarly to your standard Bash shell.
 * Presents your host name and current working directory in a beautiful light blue.
 * Will fork and execute commands.
 * Support for multiple commands separated by ";"
-* Capable of of redirection, including "<", ">", ">>", "&>", "&>>", "2>", "2>>", "1>", and "1>>". Also supports pipes! "|"
+* Capable of of redirection, including "<", ">", ">>", "&>", "&>>", "2>", "2>>", "1>", and "1>>". Also supports multiple pipes! "|"
 * You can put as many spaces between flags and commands as you like!
 
 ## Attempted
@@ -16,7 +16,7 @@ Can be used very similarly to your standard Bash shell.
 * Piping through a built-in doesn't work (kept looping infinitely for some reason). So if this is attempted, SASH will return an error
 
 ## Bugs
-
+* A more complicated command like `ls < filename | grep e | wc > output` will not work (In this case, the parser will set `filename` as the STDIN file and will ignore everything afterwards. But `ls | grep e | wc > output` will work.
 ## Files & Function Headers
 ### prompt.c
 ```
