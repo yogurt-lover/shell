@@ -6,18 +6,23 @@
 #include "pipes.h"
 #include "exec.h"
 
+#define READ_END 0
+#define WRITE_END 1
+
 void set_pipe_stdin(int command_num, int pipes[2][2]) {
 	close(STDIN_FILENO);
-	dup(pipes[(command_num + 1) % 2][0]);
-	close(pipes[(command_num + 1) % 2][0]);
-	close(pipes[(command_num + 1) % 2][1]);
+    int pipe_to_use = (command_num + 1) % 2;
+	dup(pipes[pipe_to_use][READ_END]);
+	close(pipes[pipe_to_use][READ_END]);
+	close(pipes[pipe_to_use][WRITE_END]);
 }
 
 void set_pipe_stdout(int command_num, int pipes[2][2]) {
 	close(STDOUT_FILENO);
-	dup(pipes[command_num % 2][1]);
-	close(pipes[command_num % 2][0]);
-	close(pipes[command_num % 2][1]);
+    int pipe_to_use = command_num % 2;
+	dup(pipes[pipe_to_use][WRITE_END]);
+	close(pipes[pipe_to_use][READ_END]);
+	close(pipes[pipe_to_use][WRITE_END]);
 }
 
 void pipe_handler(char **args, int command_num, int pipe_num, int pipes[2][2]) {
@@ -38,8 +43,9 @@ void pipe_handler(char **args, int command_num, int pipe_num, int pipes[2][2]) {
 		}
 	}
 	if (command_num > 0) {
-		close(pipes[(command_num + 1) % 2][0]);
-		close(pipes[(command_num + 1) % 2][1]);
+        int pipe_to_close = (command_num + 1) % 2;
+		close(pipes[pipe_to_close][READ_END]);
+		close(pipes[pipe_to_close][WRITE_END]);
 	}
 }
 
