@@ -7,6 +7,7 @@
 
 #include "redirect.h"
 #include "debug.h"
+#include "shell_name.h"
 
 void redirect_stdout(int *redirect, int *dup_stdout) {
 	*redirect = *redirect | STDOUT_CHANGED;
@@ -51,7 +52,7 @@ void change_stdout(char *input, int *redirect, int *dup_stdout, int *dup_stderr)
 		}
 	}
 	else {
-		fprintf(stderr, "shell: OUT file not specified\n");
+		fprintf(stderr, "%s: OUT file not specified\n", SHELL);
 		*redirect = *redirect | STD_FAILED;
 	}
 	if (DEBUG) fprintf(stderr, "redirect after >: %d\n", *redirect);
@@ -70,7 +71,7 @@ void change_stdin(char *input, int *redirect, int *dup_stdin) {
 		open(new_stdin_path, O_RDONLY);
 	}
 	else {
-		fprintf(stderr, "shell: IN file not specified\n");
+		fprintf(stderr, "%s: IN file not specified\n", SHELL);
 		*redirect = *redirect | STD_FAILED;
 	}
 	if (DEBUG) fprintf(stderr, "redirect after <: %d\n", *redirect);

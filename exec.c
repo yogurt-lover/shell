@@ -4,18 +4,19 @@
 
 #include "exec.h"
 #include "prompt.h"
+#include "shell_name.h"
 
 void cd_def(char **args) {
 	if (args[1]) {
 		int chdir_ret = chdir(args[1]);
-		if (chdir_ret == -1) perror("shell");
+		if (chdir_ret == -1) perror(""SHELL);
 	}
 	else chdir(get_home_dir());
 }
 
 void exec_coreutil(char **args) {
 	if (execvp(args[0], args) == -1)
-		fprintf(stderr, "shell: %s: command not found in PATH\n", args[0]);
+		fprintf(stderr, "%s: %s: command not found in PATH\n", SHELL, args[0]);
 }
 
 void exec_single(char **args, int *status) {

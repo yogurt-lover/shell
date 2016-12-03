@@ -5,6 +5,7 @@
 
 #include "pipes.h"
 #include "exec.h"
+#include "shell_name.h"
 
 #define READ_END 0
 #define WRITE_END 1
@@ -51,11 +52,11 @@ void pipe_handler(char **args, int command_num, int pipe_num, int pipes[2][2]) {
 
 int exec_pipe(char **args, int num_args, int command_num, int pipe_num, int pipes[2][2]) {
 	if (!num_args) {
-		fprintf(stderr, "shell: expected a command to pipe through\n");
+		fprintf(stderr, "%s: expected a command to pipe through\n", SHELL);
 		return 0;
 	}
 	if (!strcmp(args[0], "cd") || !strcmp(args[0], "exit")) {
-		fprintf(stderr, "shell: cannot pipe through a shell built-in\n");
+		fprintf(stderr, "%s: cannot pipe through a shell built-in\n", SHELL);
 		return 0;
 	}
 	pipe(pipes[command_num % 2]);
