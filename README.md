@@ -33,28 +33,28 @@ Handles prompt printing
 /*======== char *get_username() =========
  * Inputs: none
  * Returns: User string
- * 
+ *
  * Get environment variable "USER"
  * ====================*/
 
 /*======== char *get_hostname() =========
  * Inputs: none
  * Returns: Hostname string
- * 
+ *
  * Dynamically allocates buffer with gethostname()
  * ====================*/
 
 /*======== char *get_cwd() =========
  * Inputs: none
  * Returns: CWD string
- * 
+ *
  * Dynamically allocates buffer with getcwd()
  * ====================*/
 
 /*======== void print_prompt() =========
  * Inputs: none
  * Returns: none
- * 
+ *
  * Prints shell prompt and frees cwd and hostname memory
  * ====================*/
 ```
@@ -86,7 +86,7 @@ Defines shell-builtins (cd and exit) and handles execution of programs in $PATH
 /*======== void cd_def() ==========
  * Inputs: char **args
  * Returns: none
- * 
+ *
  * Changes directory of current process
  * If unsuccessful, print error message
  * If no arguments after "cd", then goes to home directory
@@ -95,15 +95,15 @@ Defines shell-builtins (cd and exit) and handles execution of programs in $PATH
 /*======== void exec_coreutil() ==========
  * Inputs: char **args
  * Returns: none
- * 
+ *
  * Executes command in $PATH
  * If execution fails, print error message
  * ====================*/
 
-/*======== void exec_coreutil() ==========
+/*======== void exec_single() ==========
  * Inputs: char **args, int *status
  * Returns: none
- * 
+ *
  * Tests for special commands such as "cd" or "exit" and runs cd_def
  * and sets exit status respectively (0 if exit is run, 1 otherwise).
  * Forks, and runs exec_coreutil for all else.
@@ -123,7 +123,7 @@ Handles redirection to and from files
  * Sets the stdout flag in redirect to 1
  * ====================*/
 
-/*======== void redirect_stderrt() ==========
+/*======== void redirect_stderr() ==========
  * Inputs: int *redirect
            int *dup_stderr
  * Returns: none
@@ -232,12 +232,12 @@ Handles redirection to file descriptors created by the pipe() system call and ex
  * Called by exec_pipe to set the stdin and stdout of piped commands dependent on their command_num
  * Entire function will run within a child process
  * If command_num is zero, the process's stdout file descriptor will be changed using set_pipe_stdout
- * Conversely, if command_num is at its last iteration, the process's stdin file descriptor will be changed 
+ * Conversely, if command_num is at its last iteration, the process's stdin file descriptor will be changed
  * using set_pipe_stdin
  * If the command_num is anything in between, both the stdout and stdin file descriptors will be changed.
  * The command will then be executed with exec_coreutil (in exec.c)
- * As the command_num counter increases (in shell.c), file descriptor associated with pipes that have 
- * been "used up" will be closed. 
+ * As the command_num counter increases (in shell.c), file descriptor associated with pipes that have
+ * been "used up" will be closed.
  * ====================*/
 
 /*======== int exec_pipe() ==========
