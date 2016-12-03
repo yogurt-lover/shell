@@ -3,17 +3,17 @@
 ## Features
 A lovely shell capable of executing commands in one's PATH.  
 Can be used very similarly to your standard Bash shell.  
-* Presents your host name and current working directory in a beautiful light blue.
+* Presents your username, host name and current working directory in a beautiful light blue.
 * Will fork and execute commands.
 * Support for multiple commands separated by ";"
-* Capable of of redirection, including "<", ">", ">>", "&>", "&>>", "2>", "2>>", "1>", and "1>>". Also supports multiple pipes! "|"
+* Capable of redirection, including "<", ">", ">>", "&>", "&>>", "2>", "2>>", "1>", and "1>>". Also supports multiple pipes! "|"
 * You can put as many spaces between flags and commands as you like!
 
 ## Attempted
 * Did create a colorized "ls" originally, using default colors per operating system, however was dropped in final version due to reorganization of methods and lack to time to re-implement.
 * ~/[nextdir] Does not work. However, ~ itself does work as home.
 * Piping through a built-in doesn't work (kept looping infinitely for some reason). So if this is attempted, SASH will return an error
-* The '$' character in the prompt prints in a new line because when it was printed on the same line as the rest of the prompt, tabbing and deleting would have unexpected results (i.e. characters that were deleted would be displayed)
+* The '$' character in the prompt is printed in a new line because when it was printed on the same line as the rest of the prompt, certain combinations of tabbing and deleting would have unexpected results (i.e. characters that were deleted would still be displayed)
 
 ## Bugs
 * A more complicated command like `ls < filename | grep e | wc > output` will not work (In this case, the parser will set `filename` as the STDIN file and will ignore everything afterwards. But `ls | grep e | wc > output` will work.
@@ -234,9 +234,9 @@ Handles redirection to file descriptors created by the pipe() system call and ex
  * If command_num is zero, the process's stdout file descriptor will be changed using set_pipe_stdout
  * Conversely, if command_num is at its last iteration, the process's stdin file descriptor will be changed
  * using set_pipe_stdin
- * If the command_num is anything in between, both the stdout and stdin file descriptors will be changed.
+ * If the command_num is anything in between, both the stdout and stdin file descriptors will be changed correspondingly.
  * The command will then be executed with exec_coreutil (in exec.c)
- * As the command_num counter increases (in shell.c), file descriptor associated with pipes that have
+ * As the command_num counter increases (in shell.c), file descriptors associated with pipes that have
  * been "used up" will be closed.
  * ====================*/
 
