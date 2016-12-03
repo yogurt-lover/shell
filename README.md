@@ -1,13 +1,13 @@
-# SAsh (The Seiji-Anton shell)
+# SASH (The Seiji-Anton shell)
 
 ## Features
 
-A lovely shell capable of executing commands in ones PATH.  
+A lovely shell capable of executing commands in one's PATH.  
 Can be used very similarly to your standard Bash shell.  
 * Presents your host name and current working directory in a beautiful light blue.
 * Will fork and execute commands.
-* Can run multiple commands listed in one line, separated by ";"
-* Capable of all kinds of redirection, including "<", ">", ">>", "&>", "2>". Also supports pipes! "|"
+* Support for multiple commands separated by ";"
+* Capable of of redirection, including "<", ">", ">>", "&>", "&>>", "2>", "2>>", "1>", and "1>>". Also supports pipes! "|"
 * You can put as many spaces between flags and commands as you like!
 
 ## Attempted
@@ -17,4 +17,8 @@ Can be used very similarly to your standard Bash shell.
 ## Bugs
 
 ## Files & Function Headers
-### TO BE LISTED | Seiji, templates have been made for all header files. I didn't write descriptions for pipes.c/redirect.c process() in the main file needs to be completed as well. Are there any bugs that you know of?
+### prompt.c
+### parse.c
+### exec.c
+### redirect.c
+### pipes.c
