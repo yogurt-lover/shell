@@ -34,7 +34,7 @@ void print_args(char **args, int num_args) {
 	fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 }
 
-/*======== int process() ==========
+/*======== void process() ==========
  * Inputs: none
  * Returns: none
  *
@@ -111,7 +111,7 @@ void process() {
 
 /*======== int main() ==========
  * Inputs: none
- * Returns: Int of 0.
+ * Returns: 0.
  *
  * Runs main processing method, process().
  * ====================*/

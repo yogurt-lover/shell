@@ -56,6 +56,191 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### parse.c
+```
+/*======== char *read_raw() ==========
+ * Inputs: none
+ * Returns: Dynamically allocated string from terminal input
+ *
+ * Dynamically allocates a buffer for use throughout the shell
+ * If Ctrl-D is pressed, the program exits
+ * ====================*/
+
+/*======== char **get_args() ==========
+ * Inputs: char *input
+ *         int *num_args
+ * Returns: Array of strings, where each entry is a whitespace separated token of the user input
+ *
+ * Dynamically allocates a buffer for use throughout the shell
+ * If an argument is "~", it gets replaced with the home directory.
+ * ====================*/
+```
 ### exec.c
+```
+/*======== void cd_def() ==========
+ * Inputs: char **args
+ * Returns: none
+ * 
+ * Changes directory of current process
+ * If unsuccessful, print error message
+ * If no arguments after "cd", then goes to home directory
+ * ====================*/
+
+/*======== void exec_coreutil() ==========
+ * Inputs: char **args
+ * Returns: none
+ * 
+ * Executes command in $PATH
+ * If execution fails, print error message
+ * ====================*/
+
+/*======== void exec_coreutil() ==========
+ * Inputs: char **args, int *status
+ * Returns: none
+ * 
+ * Tests for special commands such as "cd" or "exit" and runs cd_def
+ * and sets exit status respectively (0 if exit is run, 1 otherwise).
+ * Forks, and runs exec_coreutil for all else.
+ * ====================*/
+```
 ### redirect.c
+```
+/*======== void redirect_stdout() ==========
+ * Inputs: int *redirect
+           int *dup_stdout
+ * Returns: none
+ *
+ * Duplicates and closes file descriptor 1 (STDOUT)
+ * Sets dup_stdout to the duplicate of STDOUT
+ * Sets the stdout flag in redirect to 1
+ * ====================*/
+
+/*======== void redirect_stderrt() ==========
+ * Inputs: int *redirect
+           int *dup_stderr
+ * Returns: none
+ *
+ * Duplicates and closes file descriptor 2 (STDERR)
+ * Sets dup_stderr to the duplicate of STDERR
+ * Sets the stderr flag in redirect to 1
+ * ====================*/
+
+/*======== void redirect_stdin() ==========
+ * Inputs: int *redirect
+           int *dup_stdin
+ * Returns: none
+ *
+ * Duplicates and closes file descriptor 0 (STDIN)
+ * Sets dup_stdin to the duplicate of STDIN
+ * Sets the stdin flag in redirect to 1
+ * ====================*/
+
+/*======== void change_stdout() ==========
+ * Inputs: char *input
+           int *redirect
+           int *dup_stdout
+           int *dup_stderr
+ * Returns: none
+ *
+ * Redirects stdout and/or stderr to the file specified in the argument after the '>' character in the input string
+ * Doesn't modify the input
+ * Checks for the occurrence of ">>" in the input string so an append flag can be added
+ * If an argument isn't found after the '>' characters, then the failed flag in redirect is set to 1
+ * Otherwise, stdout and stderr will be changed using redirect_stdout and redirect_stderr depending on which
+ * redirect characters were used (&>, 2>, >)
+ * ====================*/
+
+/*======== void change_stdin() ==========
+ * Inputs: char *input
+           int *redirect
+           int *dup_stdin
+ * Returns: none
+ *
+ * Redirects stdin to the file specified in the argument after the '<' character in the input string
+ * Doesn't modify the input
+ * If an argument isn't found after the '<' character, then the failed flag in redirect is set to 1
+ * Otherwise, stdin will be changed using redirect_stdin
+
+/*======== void restore_stdin() ==========
+ * Inputs: int dup_stdin
+ * Returns: none
+ *
+ * Closes the current stdin file descriptor and replaces it with the duplicate file descriptor created in
+ * redirect_stdin
+ * It will only be called if the stdin flag in the redirect variable is one
+ * ====================*/
+
+/*======== void restore_stdout() ==========
+ * Inputs: int dup_stdout
+ * Returns: none
+ *
+ * Closes the current stdout file descriptor and replaces it with the duplicate file descriptor created in
+ * redirect_stdout
+ * It will only be called if the stdout flag in the redirect variable is one
+ * ====================*/
+
+/*======== void restore_stderr() ==========
+ * Inputs: int dup_stderr
+ * Returns: none
+ *
+ * Closes the current stderr file descriptor and replaces it with the duplicate file descriptor created in
+ * redirect_stderr
+ * It will only be called if the stderr flag in the redirect variable is one
+ * ====================*/
+```
 ### pipes.c
+```
+/*======== void set_pipe_stdin() ==========
+ * Inputs: int command_num
+           int pipes[2][2]
+ * Returns: none
+ *
+ * Closes the stdin file descriptor
+ * Depending on the parity of command_num, it will duplicate the "read" end of the pipe into
+ * the stdin file descriptor
+ * Then, it will close the file descriptors used up by the pipe (since the process doesn't need them anymore)
+ * ====================*/
+
+/*======== void set_pipe_stdout() ==========
+ * Inputs: int command_num
+           int pipes[2][2]
+ * Returns: none
+ *
+ * Closes the stdout file descriptor
+ * Depending on the parity of command_num, it will duplicate the "write" end of the pipe into
+ * the stdout file descriptor
+ * Then, it will close the file descriptors used up by the pipe (since the process doesn't need them anymore)
+ * ====================*/
+
+/*======== void pipe_handler() ==========
+ * Inputs: char **args
+           int command_num
+           int pipe_num
+           int pipes[2][2]
+ * Returns: none
+ *
+ * Called by exec_pipe to set the stdin and stdout of piped commands dependent on their command_num
+ * Entire function will run within a child process
+ * If command_num is zero, the process's stdout file descriptor will be changed using set_pipe_stdout
+ * Conversely, if command_num is at its last iteration, the process's stdin file descriptor will be changed 
+ * using set_pipe_stdin
+ * If the command_num is anything in between, both the stdout and stdin file descriptors will be changed.
+ * The command will then be executed with exec_coreutil (in exec.c)
+ * As the command_num counter increases (in shell.c), file descriptor associated with pipes that have 
+ * been "used up" will be closed. 
+ * ====================*/
+
+/*======== int exec_pipe() ==========
+ * Inputs: char **args
+           int num_args
+           int command_num
+           int pipe_num
+           int pipes[2][2]
+ * Returns: 1 if the command specified in args was completed successfuly, 0 otherwise
+ *
+ * Does a series of checks to see if a command is not a shell built in.
+ * (This is a feature in bash that we weren't able to resolve - see BUGS)
+ * If the command isn't a built-in, a pipe will be set up using the system call pipe(int[2])
+ * A call to pipe_handler will then be made
+ * ====================*/
+```
+### shell.c
