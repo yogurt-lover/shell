@@ -1,7 +1,6 @@
 # SASH (The Seiji-Anton shell)
 
 ## Features
-
 A lovely shell capable of executing commands in one's PATH.  
 Can be used very similarly to your standard Bash shell.  
 * Presents your host name and current working directory in a beautiful light blue.
@@ -20,6 +19,8 @@ Can be used very similarly to your standard Bash shell.
 
 ## Files & Function Headers
 ### prompt.c
+Handles prompt printing
+
 ```
 /*======== char *get_home_dir() ==========
  * Inputs: none
@@ -57,6 +58,8 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### parse.c
+Handles parsing of a command's arguments
+
 ```
 /*======== char *read_raw() ==========
  * Inputs: none
@@ -76,6 +79,8 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### exec.c
+Defines shell-builtins (cd and exit) and handles execution of programs in $PATH
+
 ```
 /*======== void cd_def() ==========
  * Inputs: char **args
@@ -104,6 +109,8 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### redirect.c
+Handles redirection to and from files
+
 ```
 /*======== void redirect_stdout() ==========
  * Inputs: int *redirect
@@ -189,6 +196,8 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### pipes.c
+Handles redirection to file descriptors created by the pipe() system call and execution of commands in pipes
+
 ```
 /*======== void set_pipe_stdin() ==========
  * Inputs: int command_num
@@ -245,6 +254,8 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### shell.c
+Main shell file
+
 ```
 /*======== int print_args() ==========
  * Inputs: char **args
@@ -281,10 +292,7 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### debug.h
-```
- * Defines the DEBUG variable for debugging purposes
-```
+Defines the DEBUG variable for debugging purposes
+
 ### shell_name.h
-```
- * Defines the name of the SHELL (i.e. SASH)
-```
+Defines the name of the SHELL (i.e. SASH)
