@@ -244,3 +244,46 @@ Can be used very similarly to your standard Bash shell.
  * ====================*/
 ```
 ### shell.c
+```
+/*======== int print_args() ==========
+ * Inputs: char **args
+ 		   int num_args
+ * Returns: none
+ *
+ * Debug method. Prints all parsed arguments placed in args array.
+ * ====================*/
+
+/*======== void process() ==========
+ * Inputs: none
+ * Returns: none
+ *
+ * Main processing method. Begins by printing the Shell prompt.
+   awaits user input, and runs read_raw() on it.
+ * The sequence of parsing and execution goes:
+ * * Separation of raw_input using ';' as a delimiter (each string being a single_input)
+ * * Set file redirection ('<', '>') and remove the arguments that come along them from single_input
+ * * Calculating number of pipes in the single_input
+ * * If there aren't any pipes, then exec_single (in exec.c) will be called
+ * * Otherwise, single_input will be separated using '|' as a delimiter
+ * * exec_pipe (in pipes.c) will be called on each substring
+ * * If file redirection has occurred (checked in the redirect variable), then they will be restored to the 
+ *   normal stdin, stdout, and/or sterr file descriptors
+ * * If exit was called without any pipes, status will have been sest to zero, and the program will exit
+ * * Otherwise, the process() loop called in the main function will keep going.
+ * ====================*/
+
+/*======== int main() ==========
+ * Inputs: none
+ * Returns: 0.
+ *
+ * Runs main processing method, process().
+ * ====================*/
+```
+### debug.h
+```
+ * Defines the DEBUG variable for debugging purposes
+```
+### shell_name.h
+```
+ * Defines the name of the SHELL (i.e. SASH)
+```
