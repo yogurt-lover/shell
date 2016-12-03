@@ -20,6 +20,13 @@
 // previous command
 // config + builtins
 
+/*======== int print_args() ==========
+ * Inputs: char **args
+ 		   int num_args
+ * Returns: none
+ *
+ * Debug method. Prints all parsed arguments placed in args array.
+ * ====================*/
 void print_args(char **args, int num_args) {
 	fprintf(stderr, "ARGUMENTS:<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 	int k = 0;
@@ -27,6 +34,16 @@ void print_args(char **args, int num_args) {
 	fprintf(stderr, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 }
 
+/*======== int process() ==========
+ * Inputs: none
+ * Returns: none
+ *
+ * Main processing method. Begins by printing the Shell prompt.
+   awaits user input, and runs read_raw() on it.
+ * While raw_input is true/exists, process it.
+ * Separate raw input by ";"
+ * If 
+ * ====================*/
 void process() {
 	int status = 1;
 	char *raw_input;
@@ -92,6 +109,12 @@ void process() {
 	if (!status) exit(EXIT_SUCCESS);
 }
 
+/*======== int main() ==========
+ * Inputs: none
+ * Returns: Int of 0.
+ *
+ * Runs main processing method, process().
+ * ====================*/
 int main() {
 	while (1) process();
 	return 0;
