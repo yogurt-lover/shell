@@ -7,7 +7,8 @@
  * Dynamically allocates a buffer for use throughout the shell
  * If Ctrl-D is pressed, the program exits
  * ====================*/
-char *read_raw(); 
+char *read_raw();
+
 /*======== char **get_args() ==========
  * Inputs: char *input
  *         int *num_args
