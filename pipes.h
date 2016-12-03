@@ -2,7 +2,7 @@
 #define _PIPESH_
 /*======== void set_pipe_stdin() ==========
  * Inputs: int command_num
-           int pipes[][]
+           int pipes[2][2]
  * Returns: none
  *
  *
@@ -11,7 +11,7 @@ void set_pipe_stdin(int command_num, int pipes[2][2]);
 
 /*======== void set_pipe_stdout() ==========
  * Inputs: int command_num
-           int pipes[][]
+           int pipes[2][2]
  * Returns: none
  *
  *
@@ -22,7 +22,7 @@ void set_pipe_stdout(int command_num, int pipes[2][2]);
  * Inputs: char **args
            int command_num
            int pipe_num
-           int pipes[][]
+           int pipes[2][2]
  * Returns: none
  *
  *
@@ -34,7 +34,7 @@ void pipe_handler(char **args, int command_num, int pipe_num, int pipes[2][2]);
            int num_args
            int command_num
            int pipe_num
-           int pipes[][]
+           int pipes[2][2]
  * Returns: int
  *
  * 
