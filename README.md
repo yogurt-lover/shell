@@ -275,12 +275,12 @@ Main shell file
  * The sequence of parsing and execution goes:
  * * Separation of raw_input using ';' as a delimiter (each string being a single_input)
  * * Set file redirection ('<', '>') and remove the arguments that come along them from single_input
- * * Calculating number of pipes in the single_input
+ * * Calculate the number of pipes in the single_input
  * * If there aren't any pipes, then exec_single (in exec.c) will be called
  * * Otherwise, single_input will be separated using '|' as a delimiter
- * * exec_pipe (in pipes.c) will be called on each substring
- * * If file redirection has occurred (checked in the redirect variable), then they will be restored to the 
- *   normal stdin, stdout, and/or sterr file descriptors
+ * * exec_pipe (in pipes.c) will then be called on each substring
+ * * If file redirection has occurred (checked in the redirect variable), then the file table will be restored to its  
+ *   normal state (stdin, stdout, and/or stderr)
  * * If exit was called without any pipes, status will have been sest to zero, and the program will exit
  * * Otherwise, the process() loop called in the main function will keep going.
  * ====================*/
